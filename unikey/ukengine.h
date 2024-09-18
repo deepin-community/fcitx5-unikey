@@ -16,12 +16,11 @@
 // This is a shared object among processes, do not put any pointer in it
 struct UkSharedMem {
     // states
-    int initialized;
-    int vietKey;
+    bool vietKey;
 
     UnikeyOptions options;
     UkInputProcessor input;
-    int usrKeyMapLoaded;
+    bool usrKeyMapLoaded;
     int usrKeyMap[256];
     int charsetId;
 
@@ -53,7 +52,12 @@ public:
 
     int process(unsigned int keyCode, int &backs, unsigned char *outBuf,
                 int &outSize, UkOutputType &outType);
-    void pass(int keyCode); // just pass through without filtering
+    // just pass through without filtering
+    void pass(int keyCode);
+    // rebuild preedit from surrounding char
+    void rebuildChar(VnLexiName ch, int &backs, unsigned char *outBuf,
+                     int &outSize);
+
     void setSingleMode();
 
     int processBackspace(int &backs, unsigned char *outBuf, int &outSize,

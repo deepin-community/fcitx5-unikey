@@ -1,31 +1,90 @@
-fcitx5-unikey (5.0.9-1) UNRELEASED; urgency=medium
+fcitx5-unikey (5.1.4-1) unstable; urgency=medium
 
-  * update
+  * New upstream release.
 
- -- Debian Input Method Team <debian-input-method@lists.debian.org>  Fri, 22 Apr 2022 17:01:09 +0800
+ -- Boyuan Yang <byang@debian.org>  Thu, 09 May 2024 20:24:01 -0400
+
+fcitx5-unikey (5.1.3-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Mon, 18 Mar 2024 22:43:41 -0400
+
+fcitx5-unikey (5.1.2-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 10 Jan 2024 16:12:47 -0500
+
+fcitx5-unikey (5.1.1-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 03 Oct 2023 09:14:33 -0400
+
+fcitx5-unikey (5.1.0-2) unstable; urgency=medium
+
+  * debian/control: Add hard dependency to fcitx5.
+
+  [ Debian Janitor ]
+  * debian/copyright: Remove unused sections.
+  * debian/upstream/metadata: Refreshed.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 19 Sep 2023 20:08:16 -0400
+
+fcitx5-unikey (5.1.0-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 22 Aug 2023 08:31:46 -0400
+
+fcitx5-unikey (5.0.13-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Thu, 15 Jun 2023 10:08:52 -0400
+
+fcitx5-unikey (5.0.12-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/copyright: Minor update.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 23 Nov 2022 14:55:04 -0500
+
+fcitx5-unikey (5.0.11-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 13 Jul 2022 01:29:55 -0400
+
+fcitx5-unikey (5.0.10-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 24 May 2022 23:24:34 -0400
 
 fcitx5-unikey (5.0.9-1) unstable; urgency=medium
 
-  * New upstream release. 
+  * New upstream release.
 
  -- Boyuan Yang <byang@debian.org>  Wed, 16 Mar 2022 11:29:52 -0400
 
 fcitx5-unikey (5.0.8-1) unstable; urgency=medium
 
-  * New upstream release. 
+  * New upstream release.
 
  -- Boyuan Yang <byang@debian.org>  Fri, 04 Feb 2022 23:29:10 -0500
 
 fcitx5-unikey (5.0.7-1) unstable; urgency=medium
 
-  * New upstream release 5.0.7. 
+  * New upstream release 5.0.7.
   * debian/copyright: Update license information.
 
  -- Boyuan Yang <byang@debian.org>  Wed, 15 Dec 2021 14:13:24 -0500
 
 fcitx5-unikey (5.0.6-1) unstable; urgency=medium
 
-  * New upstream release. 
+  * New upstream release.
 
  -- Boyuan Yang <byang@debian.org>  Sat, 20 Nov 2021 11:59:03 -0500
 

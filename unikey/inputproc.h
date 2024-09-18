@@ -8,6 +8,7 @@
 
 #include "keycons.h"
 #include "vnlexi.h"
+#include <unordered_set>
 
 #if defined(_WIN32)
 #define DllExport __declspec(dllexport)
@@ -97,6 +98,7 @@ void SetupInputClassifierTable();
 
 DllInterface extern UkKeyMapping TelexMethodMapping[];
 DllInterface extern UkKeyMapping SimpleTelexMethodMapping[];
+DllInterface extern UkKeyMapping SimpleTelex2MethodMapping[];
 DllInterface extern UkKeyMapping VniMethodMapping[];
 DllInterface extern UkKeyMapping VIQRMethodMapping[];
 DllInterface extern UkKeyMapping MsViMethodMapping[];
@@ -105,5 +107,7 @@ extern VnLexiName IsoVnLexiMap[];
 inline VnLexiName IsoToVnLexi(unsigned int keyCode) {
     return (keyCode >= 256) ? vnl_nonVnChar : IsoVnLexiMap[keyCode];
 }
+
+extern const std::unordered_set<unsigned char> WordBreakSyms;
 
 #endif

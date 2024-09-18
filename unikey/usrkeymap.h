@@ -8,15 +8,12 @@
 #define __UNIKEY_USER_KEY_MAP_H
 
 #include "inputproc.h"
-struct UkKeyMapPair {
-    unsigned char key;
-    int action;
-};
+#include <cstdio>
+#include <vector>
 
-DllInterface int UkLoadKeyMap(const char *fileName, int keyMap[256]);
-DllInterface int UkLoadKeyOrderMap(const char *fileName, UkKeyMapPair *pMap,
-                                   int *pMapCount);
-DllInterface int UkStoreKeyOrderMap(const char *fileName, UkKeyMapPair *pMap,
-                                    int mapCount);
+DllInterface void UkLoadKeyMap(FILE *f, int keyMap[256]);
+DllInterface std::vector<UkKeyMapping> UkLoadKeyOrderMap(FILE *f);
+DllInterface void UkStoreKeyOrderMap(FILE *f,
+                                     const std::vector<UkKeyMapping> &pMap);
 
 #endif

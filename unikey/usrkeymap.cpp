@@ -4,25 +4,27 @@
  * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
-using namespace std;
-
 #include "usrkeymap.h"
-#include <ctype.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <fcitx-utils/log.h>
+#include <fcitx-utils/misc.h>
+#include <fcitx-utils/stringutils.h>
 
-int getLabelIndex(int action);
-void initKeyMap(int keyMap[256]);
+namespace {
 
-#define OPT_COMMENT_CHAR ';'
+constexpr char OPT_COMMENT_CHAR = ';';
 
 struct UkEventLabelPair {
     char label[32];
     int ev;
 };
 
-UkEventLabelPair UkEvLabelList[] = {
+const char *UkKeyMapHeader = "; This is UniKey user-defined key mapping file, "
+                             "generated from UniKey (Fcitx 5)\n\n";
+
+constexpr UkEventLabelPair UkEvLabelList[] = {
     {"Tone0", vneTone0},       {"Tone1", vneTone1},
     {"Tone2", vneTone2},       {"Tone3", vneTone3},
     {"Tone4", vneTone4},       {"Tone5", vneTone5},
@@ -40,149 +42,7 @@ UkEventLabelPair UkEvLabelList[] = {
     {"O+", vneCount + vnl_Oh}, {"o+", vneCount + vnl_oh},
     {"U+", vneCount + vnl_Uh}, {"u+", vneCount + vnl_uh}};
 
-const int UkEvLabelCount = sizeof(UkEvLabelList) / sizeof(UkEventLabelPair);
-
-//--------------------------------------------------
-static int parseNameValue(char *line, char **name, char **value) {
-    char *p, *mark;
-    char ch;
-
-    if (line == 0)
-        return 0;
-
-    // get rid of comment
-    p = strchr(line, OPT_COMMENT_CHAR);
-    if (p)
-        *p = 0;
-
-    // get option name
-    for (p = line; *p == ' '; p++)
-        ;
-    if (*p == 0)
-        return 0;
-
-    *name = p;
-    mark = p; // mark the last non-space character
-    p++;
-    while ((ch = *p) != '=' && ch != 0) {
-        if (ch != ' ')
-            mark = p;
-        p++;
-    }
-
-    if (ch == 0)
-        return 0;
-    *(mark + 1) = 0; // terminate name with a null character
-
-    // get option value
-    p++;
-    while (*p == ' ')
-        p++;
-    if (*p == 0)
-        return 0;
-
-    *value = p;
-    mark = p;
-    while (*p) { // strip trailing spaces
-        if (*p != ' ')
-            mark = p;
-        p++;
-    }
-    *++mark = 0;
-    return 1;
-}
-
-//-----------------------------------------------------
-DllExport int UkLoadKeyMap(const char *fileName, int keyMap[256]) {
-    int i, mapCount;
-    UkKeyMapPair orderMap[256];
-    if (!UkLoadKeyOrderMap(fileName, orderMap, &mapCount))
-        return 0;
-
-    initKeyMap(keyMap);
-    for (i = 0; i < mapCount; i++) {
-        keyMap[orderMap[i].key] = orderMap[i].action;
-        if (orderMap[i].action < vneCount) {
-            keyMap[tolower(orderMap[i].key)] = orderMap[i].action;
-        }
-    }
-    return 1;
-}
-
-//------------------------------------------------------------------
-DllExport int UkLoadKeyOrderMap(const char *fileName, UkKeyMapPair *pMap,
-                                int *pMapCount) {
-    FILE *f;
-    char *buf;
-    char *name, *value;
-    size_t len;
-    int i, bufSize, lineCount;
-    unsigned char c;
-    int mapCount;
-    int keyMap[256];
-
-    f = fopen(fileName, "r");
-    if (f == 0) {
-        cerr << "Failed to open file: " << fileName << endl;
-        return 0;
-    }
-
-    initKeyMap(keyMap);
-    bufSize = 256;
-    buf = new char[bufSize];
-
-    lineCount = 0;
-    mapCount = 0;
-    while (!feof(f)) {
-        if (fgets((char *)buf, bufSize, f) == 0)
-            break;
-        lineCount++;
-        len = strlen(buf);
-        if (len == 0)
-            break;
-
-        if (buf[len - 1] == '\n')
-            buf[len - 1] = 0;
-        if (parseNameValue(buf, (char **)&name, (char **)&value)) {
-            if (strlen(name) == 1) {
-                for (i = 0; i < UkEvLabelCount; i++) {
-                    if (strcmp(UkEvLabelList[i].label, value) == 0) {
-                        c = (unsigned char)name[0];
-                        if (keyMap[c] != vneNormal) {
-                            // already assigned, don't accept this map
-                            break;
-                        }
-                        // cout << "key: " << c << " value: " <<
-                        // UkEvLabelList[i].ev << endl; //DEBUG
-                        keyMap[c] = UkEvLabelList[i].ev;
-                        pMap[mapCount].action = UkEvLabelList[i].ev;
-                        if (keyMap[c] < vneCount) {
-                            pMap[mapCount].key = toupper(c);
-                            keyMap[toupper(c)] = UkEvLabelList[i].ev;
-                        } else {
-                            pMap[mapCount].key = c;
-                        }
-                        mapCount++;
-                        break;
-                    }
-                }
-                if (i == UkEvLabelCount) {
-                    cerr << "Error in user key layout, line " << lineCount
-                         << ": command not found" << endl;
-                }
-            } else {
-                cerr << "Error in user key layout, line " << lineCount
-                     << ": key name is not a single character" << endl;
-            }
-        }
-    }
-    delete[] buf;
-    fclose(f);
-
-    *pMapCount = mapCount;
-
-    return 1;
-}
+constexpr auto UkEvLabelCount = FCITX_ARRAY_SIZE(UkEvLabelList);
 
 //-------------------------------------------
 void initKeyMap(int keyMap[256]) {
@@ -191,40 +51,125 @@ void initKeyMap(int keyMap[256]) {
         keyMap[c] = vneNormal;
 }
 
-const char *UkKeyMapHeader = "; This is UniKey user-defined key mapping file, "
-                             "generated from UniKey (Windows)\n\n";
-
-DllExport int UkStoreKeyOrderMap(const char *fileName, UkKeyMapPair *pMap,
-                                 int mapCount) {
-    FILE *f;
-    int i;
-    int labelIndex;
-    char line[128];
-
-    f = fopen(fileName, "wt");
-    if (f == 0) {
-        cerr << "Failed to open file: " << fileName << endl;
-        return 0;
-    }
-
-    fputs(UkKeyMapHeader, f);
-    for (i = 0; i < mapCount; i++) {
-        labelIndex = getLabelIndex(pMap[i].action);
-        if (labelIndex != -1) {
-            sprintf(line, "%c = %s\n", pMap[i].key,
-                    UkEvLabelList[labelIndex].label);
-            fputs(line, f);
-        }
-    }
-    fclose(f);
-    return 1;
-}
-
 int getLabelIndex(int event) {
-    int i;
-    for (i = 0; i < UkEvLabelCount; i++) {
+    for (size_t i = 0; i < UkEvLabelCount; i++) {
         if (UkEvLabelList[i].ev == event)
             return i;
     }
     return -1;
+}
+
+} // namespace
+
+//--------------------------------------------------
+static bool parseNameValue(std::string_view line, std::string_view *name,
+                           std::string_view *value) {
+    if (line.empty()) {
+        return false;
+    }
+
+    // get rid of comment
+    auto pos = line.find(OPT_COMMENT_CHAR);
+    if (pos != std::string::npos) {
+        line = line.substr(0, pos);
+    }
+    if (line.empty()) {
+        return false;
+    }
+
+    pos = line.find('=');
+    if (pos == std::string::npos) {
+        return false;
+    }
+    auto k = fcitx::stringutils::trimView(line.substr(0, pos));
+    auto v = fcitx::stringutils::trimView(line.substr(pos + 1));
+    if (k.empty() || v.empty()) {
+        return false;
+    }
+
+    *name = k;
+    *value = v;
+    return true;
+}
+
+//-----------------------------------------------------
+DllExport void UkLoadKeyMap(FILE *f, int keyMap[256]) {
+    std::vector<UkKeyMapping> orderMap = UkLoadKeyOrderMap(f);
+    initKeyMap(keyMap);
+    for (const auto &item : orderMap) {
+        keyMap[item.key] = item.action;
+        if (item.action < vneCount) {
+            keyMap[tolower(item.key)] = item.action;
+        }
+    }
+}
+
+//------------------------------------------------------------------
+DllExport std::vector<UkKeyMapping> UkLoadKeyOrderMap(FILE *f) {
+    size_t lineCount = 0;
+    int keyMap[256];
+
+    initKeyMap(keyMap);
+
+    std::vector<UkKeyMapping> pMap;
+    fcitx::UniqueCPtr<char> clineBuf;
+    size_t bufSize = 0;
+    while (getline(clineBuf, &bufSize, f) >= 0) {
+        lineCount++;
+        auto text = fcitx::stringutils::trimView(clineBuf.get());
+        if (text.empty()) {
+            continue;
+        }
+        std::string_view name, value;
+        if (parseNameValue(text, &name, &value)) {
+            if (name.size() != 1) {
+                FCITX_ERROR() << "Error in user key layout, line " << lineCount
+                              << ": key name is not a single character";
+                continue;
+            }
+            size_t i = 0;
+            for (; i < UkEvLabelCount; i++) {
+                if (UkEvLabelList[i].label == value) {
+                    break;
+                }
+            }
+            if (i == UkEvLabelCount) {
+                FCITX_ERROR() << "Error in user key layout, line " << lineCount
+                              << ": command not found";
+                continue;
+            }
+
+            auto c = static_cast<uint8_t>(name[0]);
+            if (keyMap[c] != vneNormal) {
+                // already assigned, don't accept this map
+                break;
+            }
+            // cout << "key: " << c << " value: " <<
+            // UkEvLabelList[i].ev << endl; //DEBUG
+            keyMap[c] = UkEvLabelList[i].ev;
+            UkKeyMapping newPair;
+            newPair.action = UkEvLabelList[i].ev;
+            if (keyMap[c] < vneCount) {
+                newPair.key = toupper(c);
+                keyMap[toupper(c)] = UkEvLabelList[i].ev;
+            } else {
+                newPair.key = c;
+            }
+            pMap.push_back(newPair);
+        }
+    }
+    return pMap;
+}
+
+DllExport void UkStoreKeyOrderMap(FILE *f,
+                                  const std::vector<UkKeyMapping> &pMap) {
+    int labelIndex;
+
+    fputs(UkKeyMapHeader, f);
+    for (const auto &item : pMap) {
+        labelIndex = getLabelIndex(item.action);
+        if (labelIndex != -1) {
+            fprintf(f, "%c = %s\n", item.key, UkEvLabelList[labelIndex].label);
+        }
+    }
 }

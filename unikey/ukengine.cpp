@@ -9,6 +9,7 @@
 #include <mutex>
 #include <stdlib.h>
 #include <string.h>
+#include <unordered_map>
 
 /*
 #if defined(_WIN32)
@@ -912,12 +913,16 @@ bool isValidCV(ConSeq c, VowelSeq v) {
 
     VowelSeqInfo &vInfo = VSeqList[v];
 
+    // gi doesn't go with i
+    // qu doesn't go with u, uh
+    // q  doesn't go with any vowel
     if ((c == cs_gi && vInfo.v[0] == vnl_i) ||
-        (c == cs_qu && vInfo.v[0] == vnl_u))
-        return false; // gi doesn't go with i, qu doesn't go with u
+        (c == cs_qu && (vInfo.v[0] == vnl_u || vInfo.v[0] == vnl_uh)) ||
+        (c == cs_q))
+        return false;
 
+    // k can only go with the following vowel sequences
     if (c == cs_k) {
-        // k can only go with the following vowel sequences
         static VowelSeq kVseq[] = {vs_e,   vs_i,    vs_y,  vs_er, vs_eo,
                                    vs_eu,  vs_eru,  vs_ia, vs_ie, vs_ier,
                                    vs_ieu, vs_ieru, vs_nil};
@@ -1267,10 +1272,13 @@ int UkEngine::processHookWithUO(UkKeyEvent &ev) {
     default: // vneHookAll, vneHookUO:
         if (v[0] == vnl_u) {
             if (v[1] == vnl_o || v[1] == vnl_or) {
-                // uo -> uo+ if prefixed by "th"
+                // uo -> uo+ if prefixed by "h", "kh", "th", or stand alone
                 if ((vs == vs_uo || vs == vs_uor) && vEnd == m_current &&
-                    m_buffer[m_current].form == vnw_cv &&
-                    m_buffer[m_current - 2].cseq == cs_th) {
+                    ((m_buffer[m_current].form == vnw_cv &&
+                      (m_buffer[m_current - 2].cseq == cs_h ||
+                       m_buffer[m_current - 2].cseq == cs_kh ||
+                       m_buffer[m_current - 2].cseq == cs_th)) ||
+                     m_buffer[m_current].form == vnw_v)) {
                     newVs = vs_uoh;
                     markChange(vStart + 1);
                     m_buffer[vStart + 1].vnSym = vnl_oh;
@@ -1559,6 +1567,7 @@ int UkEngine::processTone(UkKeyEvent &ev) {
 
     int toneOffset = getTonePosition(vs, vEnd == m_current);
     int tonePos = vEnd - (info.len - 1) + toneOffset;
+
     if (m_buffer[tonePos].tone == 0 && ev.tone == 0)
         return processAppend(ev);
 
@@ -1904,6 +1913,7 @@ int UkEngine::processAppend(UkKeyEvent &ev) {
 //----------------------------------------------------------
 int UkEngine::appendVowel(UkKeyEvent &ev) {
     bool autoCompleted = false;
+    bool complexEvent = false;
 
     m_current++;
     WordInfo &entry = m_buffer[m_current];
@@ -1956,9 +1966,27 @@ int UkEngine::appendVowel(UkKeyEvent &ev) {
     case vnw_v:
     case vnw_cv:
         vs = prev.vseq;
+
         prevTonePos = (m_current - 1) - (VSeqList[vs].len - 1) +
                       getTonePosition(vs, true);
         tone = m_buffer[prevTonePos].tone;
+
+        // u+o/uo+ + u/i -> u+o+ + u/i
+        if ((vs == vs_uoh || vs == vs_uho) &&
+            (lowerSym == vnl_i || lowerSym == vnl_u)) {
+            if (vs == vs_uho) {
+                markChange(m_current - 1);
+                prev.vnSym = vnl_oh;
+                prev.vseq = vs_uhoh;
+            } else {
+                markChange(m_current - 2);
+                m_buffer[m_current - 2].vnSym = vnl_uh;
+                m_buffer[m_current - 2].vseq = vs_uh;
+            }
+
+            vs = vs_uhoh;
+            complexEvent = true;
+        }
 
         if (lowerSym != canSym && tone != 0) // new sym has a tone, but there's
                                              // is already a preceeding tone
@@ -2050,6 +2078,10 @@ int UkEngine::appendVowel(UkKeyEvent &ev) {
         }
 
         break;
+    }
+
+    if (complexEvent) {
+        return 1;
     }
 
     if (!autoCompleted && (m_pCtrl->charsetId != CONV_CHARSET_UNI_CSTRING) &&
@@ -2355,6 +2387,60 @@ int UkEngine::process(unsigned int keyCode, int &backs, unsigned char *outBuf,
     outType = m_outType;
 
     return ret;
+}
+//----------------------------------------------------------
+void UkEngine::rebuildChar(VnLexiName ch, int &backs, unsigned char *outBuf,
+                           int &outSize) {
+    static const std::unordered_map<VnLexiName, UkKeyEvName> map{
+        {vnl_Ar, vneRoof_a}, {vnl_Ab, vneBowl},   {vnl_DD, vneDd},
+        {vnl_Er, vneRoof_e}, {vnl_Or, vneRoof_o}, {vnl_Oh, vneHook_o},
+        {vnl_Uh, vneHook_u}};
+
+    if (ch == vnl_nonVnChar) {
+        return;
+    }
+
+    prepareBuffer();
+    m_backs = 0;
+    m_changePos = m_current + 1;
+    m_pOutBuf = outBuf;
+    m_pOutSize = &outSize;
+
+    UkKeyEvent ev;
+
+    auto rootChar = StdVnRootChar[ch];
+    auto noToneChar = StdVnNoTone[ch];
+
+    auto keyCode = UnicodeTable[rootChar];
+    m_pCtrl->input.keyCodeToEvent(keyCode, ev);
+
+    // root char
+    processAppend(ev);
+
+    // add root char to key strokes
+    m_keyCurrent++;
+    m_keyStrokes[m_keyCurrent].ev = ev;
+    m_keyStrokes[m_keyCurrent].converted = true;
+
+    // modify vowel
+    auto it =
+        map.find(noToneChar % 2 == 0 ? static_cast<VnLexiName>(noToneChar)
+                                     : static_cast<VnLexiName>(noToneChar - 1));
+    if (it != map.end()) {
+        ev.evType = it->second;
+        (this->*UkKeyProcList[ev.evType])(ev);
+    }
+
+    // tone
+    auto tone = (ch - noToneChar) / 2;
+    if (tone >= 1 && tone <= 5) {
+        ev.evType = vneTone0 + tone;
+        ev.tone = tone;
+        (this->*UkKeyProcList[ev.evType])(ev);
+    }
+
+    backs = m_backs;
+    writeOutput(outBuf, outSize);
 }
 
 //----------------------------------------------------------

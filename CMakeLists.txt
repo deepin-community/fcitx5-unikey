@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
 
-project(fcitx5-unikey VERSION 5.0.9)
+project(fcitx5-unikey VERSION 5.1.4)
 
 find_package(ECM 1.0.0 REQUIRED)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -11,9 +11,10 @@ include(ECMUninstallTarget)
 option(ENABLE_QT "Enable Qt based macro editor" On)
 option(ENABLE_TEST "Build Test" On)
 option(ENABLE_COVERAGE "Build the project with gcov support (Need ENABLE_TEST=On)" Off)
+option(USE_QT6 "Use Qt6" On)
 
 find_package(PkgConfig REQUIRED)
-find_package(Fcitx5Core REQUIRED)
+find_package(Fcitx5Core 5.0.16 REQUIRED)
 find_package(Fcitx5Module REQUIRED COMPONENTS TestFrontend)
 find_package(Gettext REQUIRED)
 
@@ -22,9 +23,16 @@ add_definitions(-DFCITX_GETTEXT_DOMAIN=\"fcitx5-unikey\")
 fcitx5_add_i18n_definition()
 
 if (ENABLE_QT)
-  find_package(Qt5 5.7 REQUIRED COMPONENTS Core Gui Widgets)
-  find_package(Fcitx5Qt5WidgetsAddons REQUIRED)
+  if (USE_QT6)
+    set(QT_MAJOR_VERSION 6)
+    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+  else()
+    set(QT_MAJOR_VERSION 5)
+    find_package(Qt5 5.7 REQUIRED COMPONENTS Core Gui Widgets)
+  endif()
+  find_package(Fcitx5Qt${QT_MAJOR_VERSION}WidgetsAddons 5.0.12 REQUIRED)
   add_subdirectory(macro-editor)
+  add_subdirectory(keymap-editor)
 endif (ENABLE_QT)
 
 add_subdirectory(po)
