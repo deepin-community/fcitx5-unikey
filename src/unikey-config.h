@@ -55,9 +55,18 @@ FCITX_CONFIGURATION(
     Option<bool> surroundingText{
         this, "SurroundingText",
         _("Restore typing state from surrounding text"), true};
+    Option<bool> modifySurroundingText{
+        this, "ModifySurroundingText",
+        _("Allow to modify surrounding text (experimental)"), false};
+    Option<bool> displayUnderline{this, "DisplayUnderline",
+                                  _("Underline the preedit text"), true};
+#ifdef ENABLE_QT
     ExternalOption macroEditor{this, "MacroEditor", _("Macro Editor"),
-                               "fcitx://config/addon/unikey/macro"};);
-
+                               "fcitx://config/addon/unikey/macro"};
+    ExternalOption keymapEditor{this, "KeymapEditor", _("Keymap Editor"),
+                                "fcitx://config/addon/unikey/keymap.txt"};
+#endif
+);
 } // namespace fcitx
 
 #endif // _FCITX5_UNIKEY_UNIKEY_CONFIG_H_

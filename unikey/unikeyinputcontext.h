@@ -37,7 +37,6 @@ public:
 private:
     FCITX_DEFINE_SIGNAL(UnikeyInputMethod, Reset);
     std::unique_ptr<UkSharedMem> sharedMem_;
-    ;
 };
 
 class UnikeyInputContext {
@@ -52,6 +51,9 @@ public:
     // main handler, call every time a character input is received
     void filter(unsigned int ch);
     void putChar(unsigned int ch); // put new char without filtering
+
+    // call to rebuild preedit from surrounding char
+    void rebuildChar(VnLexiName ch);
 
     // call this before UnikeyFilter for correctly processing some TELEX
     // shortcuts

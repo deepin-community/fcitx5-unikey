@@ -7,10 +7,6 @@ set(MACRO_EDITOR_SRCS
     dialog.cpp
     )
 
-if (NOT ENABLE_QT)
-    return()
-endif (NOT ENABLE_QT)
-
 add_library(fcitx5-unikey-macro-editor
   MODULE ${MACRO_EDITOR_SRCS})
 set_target_properties(fcitx5-unikey-macro-editor PROPERTIES
@@ -19,10 +15,10 @@ set_target_properties(fcitx5-unikey-macro-editor PROPERTIES
                       AUTOUIC_OPTIONS "-tr=fcitx::tr2fcitx;--include=fcitxqti18nhelper.h"
 )
 target_link_libraries(fcitx5-unikey-macro-editor
-    Qt5::Core
-    Qt5::Widgets
-    Fcitx5Qt5::WidgetsAddons
+    Qt${QT_MAJOR_VERSION}::Core
+    Qt${QT_MAJOR_VERSION}::Widgets
+    Fcitx5Qt${QT_MAJOR_VERSION}::WidgetsAddons
     unikey-lib
     )
 
-install(TARGETS fcitx5-unikey-macro-editor DESTINATION ${CMAKE_INSTALL_LIBDIR}/fcitx5/qt5)
+install(TARGETS fcitx5-unikey-macro-editor DESTINATION ${CMAKE_INSTALL_LIBDIR}/fcitx5/qt${QT_MAJOR_VERSION})

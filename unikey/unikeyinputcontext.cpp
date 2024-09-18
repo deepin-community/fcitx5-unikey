@@ -30,11 +30,10 @@ UnikeyInputMethod::UnikeyInputMethod()
     SetupUnikeyEngine();
     sharedMem_->input.init();
     sharedMem_->macStore.init();
-    sharedMem_->vietKey = 1;
-    sharedMem_->usrKeyMapLoaded = 0;
+    sharedMem_->vietKey = true;
+    sharedMem_->usrKeyMapLoaded = false;
     setInputMethod(UkTelex);
     setOutputCharset(CONV_CHARSET_XUTF8);
-    sharedMem_->initialized = 1;
     CreateDefaultUnikeyOptions(&sharedMem_->options);
 }
 
@@ -100,6 +99,12 @@ void UnikeyInputContext::putChar(unsigned int ch) {
     engine_.pass(ch);
     bufChars_ = 0;
     backspaces_ = 0;
+}
+
+//--------------------------------------------
+void UnikeyInputContext::rebuildChar(VnLexiName ch) {
+    bufChars_ = sizeof(buf_);
+    engine_.rebuildChar(ch, backspaces_, buf_, bufChars_);
 }
 
 //--------------------------------------------
